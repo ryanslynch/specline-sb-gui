@@ -1,0 +1,168 @@
+{
+  "_comment": "GBT receiver specifications. Source: https://gbtdocs.readthedocs.io/en/latest/references/receivers.html",
+  "receivers": [
+    {
+      "name": "Rcvr_342",
+      "display_name": "PF1 342 MHz",
+      "type": "prime_focus",
+      "freq_min_mhz": 290,
+      "freq_max_mhz": 395,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Lin/Circ"
+    },
+    {
+      "name": "Rcvr_450",
+      "display_name": "PF1 450 MHz",
+      "type": "prime_focus",
+      "freq_min_mhz": 385,
+      "freq_max_mhz": 520,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Lin/Circ"
+    },
+    {
+      "name": "Rcvr_600",
+      "display_name": "PF1 600 MHz",
+      "type": "prime_focus",
+      "freq_min_mhz": 510,
+      "freq_max_mhz": 690,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Lin/Circ"
+    },
+    {
+      "name": "Rcvr_800",
+      "display_name": "PF1 800 MHz",
+      "type": "prime_focus",
+      "freq_min_mhz": 680,
+      "freq_max_mhz": 920,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Lin/Circ"
+    },
+    {
+      "name": "Rcvr_1070",
+      "display_name": "PF2",
+      "type": "prime_focus",
+      "freq_min_mhz": 910,
+      "freq_max_mhz": 1230,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Lin/Circ"
+    },
+    {
+      "name": "Rcvr_2500",
+      "display_name": "UWBR",
+      "type": "prime_focus",
+      "freq_min_mhz": 700,
+      "freq_max_mhz": 4000,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Lin",
+      "notes": "Ultra-wideband receiver. Max instantaneous bandwidth 3420 MHz."
+    },
+    {
+      "name": "Rcvr1_2",
+      "display_name": "L-Band",
+      "type": "gregorian",
+      "freq_min_mhz": 1150,
+      "freq_max_mhz": 1730,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Lin/Circ"
+    },
+    {
+      "name": "Rcvr2_3",
+      "display_name": "S-Band",
+      "type": "gregorian",
+      "freq_min_mhz": 1730,
+      "freq_max_mhz": 2600,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Lin/Circ"
+    },
+    {
+      "name": "Rcvr4_6",
+      "display_name": "C-Band",
+      "type": "gregorian",
+      "freq_min_mhz": 3950,
+      "freq_max_mhz": 7800,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Lin/Circ"
+    },
+    {
+      "name": "Rcvr8_10",
+      "display_name": "X-Band",
+      "type": "gregorian",
+      "freq_min_mhz": 7800,
+      "freq_max_mhz": 12000,
+      "beams": 1,
+      "polarizations": 2,
+      "pol_type": "Circ"
+    },
+    {
+      "name": "Rcvr12_18",
+      "display_name": "Ku-Band",
+      "type": "gregorian",
+      "freq_min_mhz": 12000,
+      "freq_max_mhz": 15400,
+      "beams": 2,
+      "polarizations": 2,
+      "pol_type": "Circ"
+    },
+    {
+      "name": "RcvrArray18_26",
+      "display_name": "KFPA",
+      "type": "gregorian",
+      "freq_min_mhz": 18000,
+      "freq_max_mhz": 27500,
+      "beams": 7,
+      "polarizations": 2,
+      "pol_type": "Circ",
+      "multi_beam": true
+    },
+    {
+      "name": "Rcvr26_40",
+      "display_name": "Ka-Band",
+      "type": "gregorian",
+      "freq_min_mhz": 26000,
+      "freq_max_mhz": 39500,
+      "beams": 2,
+      "polarizations": 1,
+      "pol_type": "Lin"
+    },
+    {
+      "name": "Rcvr40_52",
+      "display_name": "Q-Band",
+      "type": "gregorian",
+      "freq_min_mhz": 39200,
+      "freq_max_mhz": 50500,
+      "beams": 2,
+      "polarizations": 2,
+      "pol_type": "Circ"
+    },
+    {
+      "name": "Rcvr68_92",
+      "display_name": "W-Band",
+      "type": "gregorian",
+      "freq_min_mhz": 67000,
+      "freq_max_mhz": 93000,
+      "beams": 2,
+      "polarizations": 2,
+      "pol_type": "Lin/Circ"
+    },
+    {
+      "name": "RcvrArray75_115",
+      "display_name": "Argus",
+      "type": "gregorian",
+      "freq_min_mhz": 74000,
+      "freq_max_mhz": 116000,
+      "beams": 16,
+      "polarizations": 1,
+      "pol_type": "Lin",
+      "multi_beam": true
+    }
+  ]
+}

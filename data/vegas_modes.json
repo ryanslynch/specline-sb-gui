@@ -1,0 +1,633 @@
+{
+  "_comment": "VEGAS spectral line mode specifications and minimum switching periods. Sources: gbtdocs VEGAS page and GBT Memo 288 (Kepley, Maddalena, & Prestage 2014).",
+  "modes": [
+    {
+      "mode": 1,
+      "subbands": 1,
+      "bandwidth_mhz": 1500,
+      "channels": 1024,
+      "resolution_khz": 1465,
+      "min_int_time_s": 0.001,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0005,
+        "tp_s": 0.0100,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3300
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0005},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0100},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 2,
+      "subbands": 1,
+      "bandwidth_mhz": 1500,
+      "channels": 16384,
+      "resolution_khz": 92,
+      "min_int_time_s": 0.002,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0014,
+        "tp_s": 0.0280,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3480
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0014},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0280},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 3,
+      "subbands": 1,
+      "bandwidth_mhz": 1080,
+      "channels": 16384,
+      "resolution_khz": 66,
+      "min_int_time_s": 0.004,
+      "baseband_mhz": 1000,
+      "min_swper": {
+        "tp_nocal_s": 0.0020,
+        "tp_s": 0.0400,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3600
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0020},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0400},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 4,
+      "subbands": 1,
+      "bandwidth_mhz": 187.5,
+      "channels": 32768,
+      "resolution_khz": 5.7,
+      "min_int_time_s": 0.011,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0100,
+        "tp_s": 0.0280,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3480
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0100},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0280},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 5,
+      "subbands": 1,
+      "bandwidth_mhz": 187.5,
+      "channels": 65536,
+      "resolution_khz": 2.9,
+      "min_int_time_s": 0.022,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0199,
+        "tp_s": 0.0559,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3759
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0199},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0559},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 6,
+      "subbands": 1,
+      "bandwidth_mhz": 187.5,
+      "channels": 131072,
+      "resolution_khz": 1.4,
+      "min_int_time_s": 0.035,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0301,
+        "tp_s": 0.1118,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.4318
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0301},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.1118},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 7,
+      "subbands": 1,
+      "bandwidth_mhz": 100,
+      "channels": 32768,
+      "resolution_khz": 3.1,
+      "min_int_time_s": 0.012,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0102,
+        "tp_s": 0.0524,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3724
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0102},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0524},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.3200},
+        "sp": {"nu_min_ghz": 115, "swper_s": 0.3724}
+      }
+    },
+    {
+      "mode": 8,
+      "subbands": 1,
+      "bandwidth_mhz": 100,
+      "channels": 65536,
+      "resolution_khz": 1.5,
+      "min_int_time_s": 0.025,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0203,
+        "tp_s": 0.1049,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.4249
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0203},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.1049},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 9,
+      "subbands": 1,
+      "bandwidth_mhz": 100,
+      "channels": 131072,
+      "resolution_khz": 0.8,
+      "min_int_time_s": 0.040,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0301,
+        "tp_s": 0.2097,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.5297
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0301},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.2097},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 10,
+      "subbands": 1,
+      "bandwidth_mhz": 23.44,
+      "channels": 32768,
+      "resolution_khz": 0.7,
+      "min_int_time_s": 0.016,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0056,
+        "tp_s": 0.2237,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.5437
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0056},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.2237},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 11,
+      "subbands": 1,
+      "bandwidth_mhz": 23.44,
+      "channels": 65536,
+      "resolution_khz": 0.4,
+      "min_int_time_s": 0.033,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0112,
+        "tp_s": 0.4474,
+        "sp_nocal_s": 0.4474,
+        "sp_s": 0.8948
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0112},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.4474},
+        "sp_nocal": {"nu_min_ghz": 33.1, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 16.5, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 12,
+      "subbands": 1,
+      "bandwidth_mhz": 23.44,
+      "channels": 131072,
+      "resolution_khz": 0.2,
+      "min_int_time_s": 0.072,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0280,
+        "tp_s": 0.8948,
+        "sp_nocal_s": 0.8948,
+        "sp_s": 1.7896
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0280},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.8948},
+        "sp_nocal": {"nu_min_ghz": 8.3, "swper_s": 0.8948},
+        "sp": {"nu_min_ghz": 4.1, "swper_s": 1.7896}
+      }
+    },
+    {
+      "mode": 13,
+      "subbands": 1,
+      "bandwidth_mhz": 23.44,
+      "channels": 262144,
+      "resolution_khz": 0.1,
+      "min_int_time_s": 0.134,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0447,
+        "tp_s": 1.7896,
+        "sp_nocal_s": 1.7896,
+        "sp_s": 3.5791
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 82.7, "swper_s": 0.0447},
+        "tp": {"nu_min_ghz": 115, "swper_s": 1.7896},
+        "sp_nocal": {"nu_min_ghz": 2.1, "swper_s": 1.7896},
+        "sp": {"nu_min_ghz": 1.0, "swper_s": 3.5791}
+      }
+    },
+    {
+      "mode": 14,
+      "subbands": 1,
+      "bandwidth_mhz": 23.44,
+      "channels": 524288,
+      "resolution_khz": 0.04,
+      "min_int_time_s": 0.246,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0671,
+        "tp_s": 3.5791,
+        "sp_nocal_s": 3.5791,
+        "sp_s": 7.1583
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 27.6, "swper_s": 0.0671},
+        "tp": {"nu_min_ghz": 115, "swper_s": 3.5791},
+        "sp_nocal": {"nu_min_ghz": 0.5, "swper_s": 3.5791},
+        "sp": {"nu_min_ghz": 0.3, "swper_s": 7.1583}
+      }
+    },
+    {
+      "mode": 15,
+      "subbands": 1,
+      "bandwidth_mhz": 11.72,
+      "channels": 32768,
+      "resolution_khz": 0.4,
+      "min_int_time_s": 0.027,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0056,
+        "tp_s": 0.4474,
+        "sp_nocal_s": 0.4474,
+        "sp_s": 0.8948
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0056},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.4474},
+        "sp_nocal": {"nu_min_ghz": 33.1, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 16.5, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 16,
+      "subbands": 1,
+      "bandwidth_mhz": 11.72,
+      "channels": 65536,
+      "resolution_khz": 0.2,
+      "min_int_time_s": 0.055,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0112,
+        "tp_s": 0.8948,
+        "sp_nocal_s": 0.8948,
+        "sp_s": 1.7896
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0112},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.8948},
+        "sp_nocal": {"nu_min_ghz": 8.3, "swper_s": 0.8948},
+        "sp": {"nu_min_ghz": 4.1, "swper_s": 1.7896}
+      }
+    },
+    {
+      "mode": 17,
+      "subbands": 1,
+      "bandwidth_mhz": 11.72,
+      "channels": 131072,
+      "resolution_khz": 0.1,
+      "min_int_time_s": 0.123,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0336,
+        "tp_s": 1.7896,
+        "sp_nocal_s": 1.7896,
+        "sp_s": 3.5791
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 110.3, "swper_s": 0.0336},
+        "tp": {"nu_min_ghz": 115, "swper_s": 1.7896},
+        "sp_nocal": {"nu_min_ghz": 2.1, "swper_s": 1.7896},
+        "sp": {"nu_min_ghz": 1.0, "swper_s": 3.5791}
+      }
+    },
+    {
+      "mode": 18,
+      "subbands": 1,
+      "bandwidth_mhz": 11.72,
+      "channels": 262144,
+      "resolution_khz": 0.04,
+      "min_int_time_s": 0.223,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0447,
+        "tp_s": 3.5791,
+        "sp_nocal_s": 3.5791,
+        "sp_s": 7.1583
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 41.3, "swper_s": 0.0447},
+        "tp": {"nu_min_ghz": 115, "swper_s": 3.5791},
+        "sp_nocal": {"nu_min_ghz": 0.5, "swper_s": 3.5791},
+        "sp": {"nu_min_ghz": 0.3, "swper_s": 7.1583}
+      }
+    },
+    {
+      "mode": 19,
+      "subbands": 1,
+      "bandwidth_mhz": 11.72,
+      "channels": 524288,
+      "resolution_khz": 0.02,
+      "min_int_time_s": 0.447,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0895,
+        "tp_s": 7.1583,
+        "sp_nocal_s": 7.1583,
+        "sp_s": 14.3166
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 10.3, "swper_s": 0.3800},
+        "tp": {"nu_min_ghz": 115, "swper_s": 7.5383},
+        "sp_nocal": {"nu_min_ghz": 0.1, "swper_s": 7.1583},
+        "sp": {"nu_min_ghz": 0.1, "swper_s": 14.3166}
+      }
+    },
+    {
+      "mode": 20,
+      "subbands": 8,
+      "bandwidth_mhz": 23.44,
+      "channels": 4096,
+      "resolution_khz": 5.7,
+      "min_int_time_s": 0.006,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0051,
+        "tp_s": 0.0280,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3480
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0051},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0280},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 21,
+      "subbands": 8,
+      "bandwidth_mhz": 23.44,
+      "channels": 8192,
+      "resolution_khz": 2.9,
+      "min_int_time_s": 0.012,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0101,
+        "tp_s": 0.0559,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3759
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0101},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0559},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 22,
+      "subbands": 8,
+      "bandwidth_mhz": 23.44,
+      "channels": 16384,
+      "resolution_khz": 1.4,
+      "min_int_time_s": 0.035,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0301,
+        "tp_s": 0.1118,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.4318
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0301},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.1118},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 23,
+      "subbands": 8,
+      "bandwidth_mhz": 23.44,
+      "channels": 32768,
+      "resolution_khz": 0.7,
+      "min_int_time_s": 0.051,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0405,
+        "tp_s": 0.2237,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.5437
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0405},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.2237},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 54.4, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 24,
+      "subbands": 8,
+      "bandwidth_mhz": 23.44,
+      "channels": 65536,
+      "resolution_khz": 0.4,
+      "min_int_time_s": 0.097,
+      "baseband_mhz": 1500,
+      "min_swper": {
+        "tp_nocal_s": 0.0755,
+        "tp_s": 0.4474,
+        "sp_nocal_s": 0.4474,
+        "sp_s": 0.8948
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0755},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.4474},
+        "sp_nocal": {"nu_min_ghz": 33.1, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 16.5, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 25,
+      "subbands": 8,
+      "bandwidth_mhz": 16.9,
+      "channels": 4096,
+      "resolution_khz": 4.1,
+      "min_int_time_s": 0.008,
+      "baseband_mhz": 1000,
+      "min_swper": {
+        "tp_nocal_s": 0.0070,
+        "tp_s": 0.0388,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3588
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0070},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0388},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 26,
+      "subbands": 8,
+      "bandwidth_mhz": 16.9,
+      "channels": 8192,
+      "resolution_khz": 2.1,
+      "min_int_time_s": 0.017,
+      "baseband_mhz": 1000,
+      "min_swper": {
+        "tp_nocal_s": 0.0141,
+        "tp_s": 0.0777,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.3977
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0141},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.0777},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 115, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 27,
+      "subbands": 8,
+      "bandwidth_mhz": 16.9,
+      "channels": 16384,
+      "resolution_khz": 1.0,
+      "min_int_time_s": 0.047,
+      "baseband_mhz": 1000,
+      "min_swper": {
+        "tp_nocal_s": 0.0398,
+        "tp_s": 0.1553,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.4753
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0398},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.1553},
+        "sp_nocal": {"nu_min_ghz": 115, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 89.7, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 28,
+      "subbands": 8,
+      "bandwidth_mhz": 16.9,
+      "channels": 32768,
+      "resolution_khz": 0.51,
+      "min_int_time_s": 0.069,
+      "baseband_mhz": 1000,
+      "min_swper": {
+        "tp_nocal_s": 0.0544,
+        "tp_s": 0.3107,
+        "sp_nocal_s": 0.3200,
+        "sp_s": 0.6307
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 115, "swper_s": 0.0544},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.3107},
+        "sp_nocal": {"nu_min_ghz": 68.6, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 33.8, "swper_s": 1.5200}
+      }
+    },
+    {
+      "mode": 29,
+      "subbands": 8,
+      "bandwidth_mhz": 16.9,
+      "channels": 65536,
+      "resolution_khz": 0.26,
+      "min_int_time_s": 0.132,
+      "baseband_mhz": 1000,
+      "min_swper": {
+        "tp_nocal_s": 0.1010,
+        "tp_s": 0.6214,
+        "sp_nocal_s": 0.6214,
+        "sp_s": 1.2428
+      },
+      "min_swper_doppler_pointed": {
+        "tp_nocal": {"nu_min_ghz": 105.5, "swper_s": 0.1010},
+        "tp": {"nu_min_ghz": 115, "swper_s": 0.6214},
+        "sp_nocal": {"nu_min_ghz": 17.1, "swper_s": 0.7600},
+        "sp": {"nu_min_ghz": 8.6, "swper_s": 1.5200}
+      }
+    }
+  ],
+  "frequency_range_constraints": {
+    "_comment": "Usable frequency range within the baseband for each mode group",
+    "modes_1_2_20_24": {
+      "baseband_mhz": 1500,
+      "usable_range_mhz": [150, 1400],
+      "usable_span_mhz": 1250
+    },
+    "modes_3_25_29": {
+      "baseband_mhz": 1000,
+      "usable_range_mhz": [150, 950],
+      "usable_span_mhz": 800
+    }
+  },
+  "global_constraints": {
+    "all_banks_share": ["tint", "swper", "swfreq"],
+    "subbands_within_bank_must_match": ["resolution", "bandwidth"],
+    "min_freq_switch_period_s": 0.25,
+    "_comment_freq_switch": "Minimum switching period for frequency switching due to LO hardware limitations"
+  }
+}
