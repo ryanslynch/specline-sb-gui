@@ -6,6 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "spectral-sb-gui"
 version = "0.1.0"
 description = "GBT Spectral Line Scheduling Block GUI"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Ryan Lynch" }]
 requires-python = ">=3.10"
 dependencies = [
     "PySide6>=6.5",

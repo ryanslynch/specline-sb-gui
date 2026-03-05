@@ -1,0 +1,3 @@
+PySide6>=6.5
+astropy>=5.0
+astroquery>=0.4

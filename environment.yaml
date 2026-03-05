@@ -1,0 +1,12 @@
+name: specline-sb-gui
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.10
+  - pyside6>=6.5
+  - astropy>=5.0
+  - astroquery>=0.4
+  - pip
+  - pip:
+      - spectral-sb-gui
