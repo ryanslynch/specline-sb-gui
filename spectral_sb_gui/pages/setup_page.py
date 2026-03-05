@@ -4,12 +4,16 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QCheckBox,
     QComboBox,
     QDoubleSpinBox,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPushButton,
     QSplitter,
@@ -32,6 +36,9 @@ from spectral_sb_gui.models.observation import (
 _DATA_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data"
 )
+
+# UWBR receiver name
+_UWBR_NAME = "Rcvr_2500"
 
 
 def _load_receivers():
@@ -84,20 +91,8 @@ def find_receivers_for_freq(freq_mhz, receivers):
     return matches
 
 
-def select_receivers_for_source(source, receivers):
-    """Select minimum set of receivers to cover all of a source's Doppler-shifted freqs.
-
-    Returns list of (receiver_dict, list_of_rest_freqs_covered).
-    Uses a greedy set cover approach.
-    """
-    # Compute Doppler-shifted frequency for each rest freq
-    freq_pairs = []  # (rest_freq_obj, obs_freq_mhz)
-    for rf in source.rest_freqs:
-        obs_freq = doppler_shift_freq(
-            rf.freq_mhz, source.velocity_kms, source.velocity_definition.value
-        )
-        freq_pairs.append((rf, obs_freq))
-
+def _greedy_cover(freq_pairs, receivers):
+    """Greedy set cover: find minimum set of receivers covering all frequencies."""
     uncovered = set(range(len(freq_pairs)))
     selected = []
 
@@ -121,6 +116,61 @@ def select_receivers_for_source(source, receivers):
         selected.append((best_rcvr, rest_freqs_covered, obs_freqs_covered))
 
     return selected
+
+
+def select_receivers_for_source(source, receivers):
+    """Select minimum set of receivers to cover all of a source's Doppler-shifted freqs.
+
+    Returns list of (receiver_dict, list_of_rest_freqs_covered, list_of_obs_freqs_covered).
+
+    UWBR (700–4000 MHz) is only preferred when it avoids using two or more narrowband
+    receivers.  A single narrowband receiver is always preferred over UWBR because it
+    offers better sensitivity over a narrow bandwidth.
+    """
+    # Compute Doppler-shifted frequency for each rest freq
+    freq_pairs = []  # (rest_freq_obj, obs_freq_mhz)
+    for rf in source.rest_freqs:
+        obs_freq = doppler_shift_freq(
+            rf.freq_mhz, source.velocity_kms, source.velocity_definition.value
+        )
+        freq_pairs.append((rf, obs_freq))
+
+    if not freq_pairs:
+        return []
+
+    uwbr = next((r for r in receivers if r["name"] == _UWBR_NAME), None)
+    non_uwbr = [r for r in receivers if r["name"] != _UWBR_NAME]
+
+    # First try without UWBR
+    result_no_uwbr = _greedy_cover(freq_pairs, non_uwbr)
+
+    # If non-UWBR solution needs at most one receiver, always prefer it
+    if len(result_no_uwbr) <= 1:
+        return result_no_uwbr
+
+    # Multiple non-UWBR receivers needed — check if UWBR + remaining is fewer receivers
+    if uwbr is not None:
+        uwbr_covered = [
+            (rf, obs)
+            for rf, obs in freq_pairs
+            if uwbr["freq_min_mhz"] <= obs <= uwbr["freq_max_mhz"]
+        ]
+        outside_uwbr = [
+            (rf, obs)
+            for rf, obs in freq_pairs
+            if not (uwbr["freq_min_mhz"] <= obs <= uwbr["freq_max_mhz"])
+        ]
+        if uwbr_covered:
+            result_remaining = _greedy_cover(outside_uwbr, non_uwbr) if outside_uwbr else []
+            if 1 + len(result_remaining) < len(result_no_uwbr):
+                uwbr_entry = (
+                    uwbr,
+                    [rf for rf, _ in uwbr_covered],
+                    [obs for _, obs in uwbr_covered],
+                )
+                return [uwbr_entry] + result_remaining
+
+    return result_no_uwbr
 
 
 # ------------------------------------------------------------------
@@ -162,9 +212,45 @@ def resolution_to_khz(rest_freq_mhz, res_value, res_unit):
 def suggest_switching_mode(rest_freqs):
     """Suggest a switching mode based on expected line widths.
 
-    Without explicit line width info, default to position switching.
+    - Width < 10 km/s  → frequency switching
+    - Width > 100 km/s → position switching
+    - Unknown or ambiguous → position switching (default)
     """
+    widths = [
+        rf.line_width_kms
+        for rf in rest_freqs
+        if rf.line_width_kms is not None and rf.line_width_kms > 0
+    ]
+    if widths:
+        max_width = max(widths)
+        if max_width < 10.0:
+            return SwitchingMode.FREQUENCY
+        elif max_width > 100.0:
+            return SwitchingMode.POSITION
     return SwitchingMode.POSITION
+
+
+def suggest_swfreq_mhz(rest_freqs, obs_freqs, bandwidth_mhz):
+    """Suggest a frequency throw for frequency switching.
+
+    The throw should be ~3× the line width.  If less than half the bandwidth,
+    in-band frequency switching is used (more efficient).
+    """
+    c_kms = 299792.458
+    widths = [
+        rf.line_width_kms
+        for rf in rest_freqs
+        if rf.line_width_kms is not None and rf.line_width_kms > 0
+    ]
+    if widths and obs_freqs:
+        max_width_kms = max(widths)
+        ref_freq_mhz = obs_freqs[0]
+        width_mhz = ref_freq_mhz * max_width_kms / c_kms
+        throw = 3.0 * width_mhz
+        # Cap at half bandwidth to enable in-band switching if possible
+        max_throw = bandwidth_mhz / 2.0
+        return max(0.1, min(throw, max_throw))
+    return 1.0  # default 1 MHz throw
 
 
 # ------------------------------------------------------------------
@@ -241,7 +327,7 @@ class SetupPage(QWizardPage):
             "Summary of auto-selected observing configurations — "
             "select a row to view and modify details on the right"
         )
-        self._summary_table.setColumnCount(5)
+        self._summary_table.setColumnCount(6)
         self._summary_table.setHorizontalHeaderLabels(
             [
                 "Source",
@@ -249,13 +335,14 @@ class SetupPage(QWizardPage):
                 "VEGAS Mode",
                 "Bandwidth",
                 "Switching",
+                "Duration (min)",
             ]
         )
         self._summary_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._summary_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._summary_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         header = self._summary_table.horizontalHeader()
-        for col in range(5):
+        for col in range(6):
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.Stretch)
         self._summary_table.currentCellChanged.connect(lambda row, *_: self._on_setup_selected(row))
         left_layout.addWidget(self._summary_table)
@@ -307,6 +394,17 @@ class SetupPage(QWizardPage):
         sw_row3.addWidget(self._tint_spin)
         sw_layout.addLayout(sw_row3)
 
+        sw_row4 = QHBoxLayout()
+        sw_row4.addWidget(QLabel("Total Duration (min):"))
+        self._duration_edit = QLineEdit()
+        self._duration_edit.setPlaceholderText("e.g. 30")
+        self._duration_edit.setToolTip(
+            "Total on-source integration time in minutes for this setup. "
+            "Used to set the default number of scans on the Strategy page."
+        )
+        sw_row4.addWidget(self._duration_edit)
+        sw_layout.addLayout(sw_row4)
+
         self._swfreq_row = QHBoxLayout()
         self._swfreq_row_label = QLabel("Freq Throw (MHz):")
         self._swfreq_row.addWidget(self._swfreq_row_label)
@@ -324,6 +422,35 @@ class SetupPage(QWizardPage):
 
         sw_group.setLayout(sw_layout)
         right_layout.addWidget(sw_group)
+
+        # Multi-beam configuration (shown only for multi-beam receivers)
+        self._multibeam_group = QGroupBox("Multi-Beam Configuration")
+        self._multibeam_group.setToolTip(
+            "Configuration options for multi-beam receivers (KFPA, Argus)"
+        )
+        mb_layout = QVBoxLayout()
+
+        self._multibeam_info = QLabel("")
+        self._multibeam_info.setWordWrap(True)
+        mb_layout.addWidget(self._multibeam_info)
+
+        self._use_all_beams_cb = QCheckBox("Use all beams (recommended)")
+        self._use_all_beams_cb.setChecked(True)
+        self._use_all_beams_cb.setToolTip(
+            "Use all available beams for this receiver. "
+            "Uncheck to select specific beams in the generated scheduling block."
+        )
+        self._use_all_beams_cb.toggled.connect(self._on_use_all_beams_toggled)
+        mb_layout.addWidget(self._use_all_beams_cb)
+
+        self._beam_list = QListWidget()
+        self._beam_list.setToolTip("Select which beams to include in the observation")
+        self._beam_list.setVisible(False)
+        mb_layout.addWidget(self._beam_list)
+
+        self._multibeam_group.setLayout(mb_layout)
+        self._multibeam_group.setVisible(False)
+        right_layout.addWidget(self._multibeam_group)
 
         # VEGAS mode info
         mode_group = QGroupBox("VEGAS Mode Details")
@@ -418,17 +545,24 @@ class SetupPage(QWizardPage):
 
                 vegas_mode = select_vegas_mode(target_res_khz, self._vegas_data)
                 sw_mode = suggest_switching_mode(rest_freqs)
+                swfreq = (
+                    suggest_swfreq_mhz(rest_freqs, obs_freqs, vegas_mode["bandwidth_mhz"])
+                    if sw_mode == SwitchingMode.FREQUENCY
+                    else 1.0
+                )
 
                 config = ReceiverConfig(
                     receiver_name=rcvr_dict["name"],
                     display_name=rcvr_dict["display_name"],
+                    receiver_type=rcvr_dict.get("type", ""),
+                    num_beams=rcvr_dict.get("beams", 1),
                     vegas_mode=vegas_mode["mode"],
                     bandwidth_mhz=vegas_mode["bandwidth_mhz"],
                     channels=vegas_mode["channels"],
                     resolution_khz=vegas_mode["resolution_khz"],
                     switching_mode=sw_mode,
                     swper=1.0,
-                    swfreq_mhz=1.0,
+                    swfreq_mhz=swfreq,
                     tint=1.0,
                     rest_freqs_mhz=[rf.freq_mhz for rf in rest_freqs],
                     obs_freqs_mhz=obs_freqs,
@@ -463,6 +597,10 @@ class SetupPage(QWizardPage):
                 self._summary_table.setItem(row, 2, QTableWidgetItem(f"Mode {config.vegas_mode}"))
                 self._summary_table.setItem(row, 3, QTableWidgetItem(f"{config.bandwidth_mhz} MHz"))
                 self._summary_table.setItem(row, 4, QTableWidgetItem(config.switching_mode.value))
+                dur_text = (
+                    f"{config.total_duration_s / 60:.1f}" if config.total_duration_s > 0 else ""
+                )
+                self._summary_table.setItem(row, 5, QTableWidgetItem(dur_text))
                 self._setup_index_map.append((si, ci))
 
     def _on_setup_selected(self, row):
@@ -472,7 +610,7 @@ class SetupPage(QWizardPage):
         self._current_setup_idx = (si, ci)
         config = self.observation.source_setups[si].receiver_configs[ci]
 
-        # Populate detail panel
+        # Populate switching detail panel
         for i in range(self._sw_mode_combo.count()):
             if self._sw_mode_combo.itemData(i) == config.switching_mode:
                 self._sw_mode_combo.setCurrentIndex(i)
@@ -480,6 +618,8 @@ class SetupPage(QWizardPage):
         self._swper_spin.setValue(config.swper)
         self._tint_spin.setValue(config.tint)
         self._swfreq_spin.setValue(config.swfreq_mhz)
+        dur_text = f"{config.total_duration_s / 60:.4g}" if config.total_duration_s > 0 else ""
+        self._duration_edit.setText(dur_text)
 
         # Show/hide freq throw
         is_freq_sw = config.switching_mode == SwitchingMode.FREQUENCY
@@ -496,7 +636,42 @@ class SetupPage(QWizardPage):
             freq_lines.append(f"{freq:.4f} MHz")
         self._freq_list.setText("\n".join(freq_lines))
 
+        # Multi-beam panel
+        is_multi_beam = config.num_beams > 1
+        self._multibeam_group.setVisible(is_multi_beam)
+        if is_multi_beam:
+            self._multibeam_info.setText(
+                f"This is a multi-beam receiver with {config.num_beams} beams "
+                f"({config.display_name}). By default, all beams are active during the "
+                f"observation."
+            )
+            self._populate_beam_list(config)
+
         self._check_swper()
+
+    def _populate_beam_list(self, config):
+        """Populate the beam checklist for a multi-beam receiver."""
+        self._beam_list.blockSignals(True)
+        self._beam_list.clear()
+        active = config.active_beams  # None means all
+        for beam_idx in range(config.num_beams):
+            item = QListWidgetItem(f"Beam {beam_idx}")
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            checked = active is None or beam_idx in active
+            item.setCheckState(Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked)
+            self._beam_list.addItem(item)
+        self._beam_list.blockSignals(False)
+
+        use_all = config.active_beams is None
+        self._use_all_beams_cb.setChecked(use_all)
+        self._beam_list.setVisible(not use_all)
+
+    def _on_use_all_beams_toggled(self, checked):
+        self._beam_list.setVisible(not checked)
+        if checked:
+            # Mark all beams checked
+            for i in range(self._beam_list.count()):
+                self._beam_list.item(i).setCheckState(Qt.CheckState.Checked)
 
     def _get_mode_info(self, mode_num):
         for m in self._vegas_data["modes"]:
@@ -555,9 +730,38 @@ class SetupPage(QWizardPage):
         config.tint = self._tint_spin.value()
         config.swfreq_mhz = self._swfreq_spin.value()
 
+        # Save duration
+        dur_text = self._duration_edit.text().strip()
+        if dur_text:
+            try:
+                dur_min = float(dur_text)
+                if dur_min <= 0:
+                    QMessageBox.warning(self, "Validation", "Duration must be positive.")
+                    return
+                config.total_duration_s = dur_min * 60.0
+            except ValueError:
+                QMessageBox.warning(self, "Validation", "Duration must be a number in minutes.")
+                return
+        else:
+            config.total_duration_s = 0.0
+
+        # Save multi-beam settings
+        if config.num_beams > 1:
+            if self._use_all_beams_cb.isChecked():
+                config.active_beams = None
+            else:
+                active = []
+                for i in range(self._beam_list.count()):
+                    item = self._beam_list.item(i)
+                    if item.checkState() == Qt.CheckState.Checked:
+                        active.append(i)
+                config.active_beams = active if active else None
+
         # Update summary table
         row = self._setup_index_map.index((si, ci))
         self._summary_table.item(row, 4).setText(config.switching_mode.value)
+        dur_cell = f"{config.total_duration_s / 60:.1f}" if config.total_duration_s > 0 else ""
+        self._summary_table.item(row, 5).setText(dur_cell)
 
     # ------------------------------------------------------------------
     # Page lifecycle
@@ -568,6 +772,7 @@ class SetupPage(QWizardPage):
         self._populate_summary()
         self._current_setup_idx = (-1, -1)
         self._warning_label.setText("")
+        self._multibeam_group.setVisible(False)
         if self._summary_table.rowCount() > 0:
             self._summary_table.setCurrentCell(0, 0)
 
@@ -575,4 +780,19 @@ class SetupPage(QWizardPage):
         # Apply any pending changes
         if self._current_setup_idx[0] >= 0:
             self._apply_changes()
+
+        # Warn if any setup has no duration set
+        missing = []
+        for setup in self.observation.source_setups:
+            for config in setup.receiver_configs:
+                if config.total_duration_s == 0.0:
+                    missing.append(f"{setup.source_name} — {config.display_name}")
+        if missing:
+            msg = (
+                "The following setups have no total duration specified:\n"
+                + "\n".join(f"  • {m}" for m in missing)
+                + "\n\nYou can continue, but the Strategy page will default to 1 scan per group."
+            )
+            QMessageBox.warning(self, "Duration Not Set", msg)
+
         return True

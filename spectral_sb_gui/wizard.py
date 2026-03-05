@@ -31,4 +31,4 @@ class SpectralLineWizard(QWizard):
         self.setPage(PAGE_PREVIEW, PreviewPage(self.observation, self))
         self.setPage(PAGE_SAVE, SavePage(self.observation, self))
 
-        self.resize(900, 650)
+        self.resize(1013, 731)

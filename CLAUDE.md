@@ -157,6 +157,8 @@ features that depend on telescope-specific behavior:
 - [HI Position-Switched Tutorial](https://gbtdocs.readthedocs.io/en/latest/tutorials/hi_psw_tutorial.html)
 - [GBT Observing Tactics](https://gbtdocs.readthedocs.io/en/latest/how-tos/general_guides/gbt_tactics.html)
 - [Argus Observing Instructions](https://gbtdocs.readthedocs.io/en/latest/how-tos/receivers/argus/argus_obs.html)
+- [Pointing and Focusing Strategies](https://gbtdocs.readthedocs.io/en/latest/how-tos/general_guides/point-focus.html) — When and how often to run AutoPeakFocus/AutoPeak/AutoFocus; Table 2 gives cadence by receiver frequency
+- [AutoOOF Guide](https://gbtdocs.readthedocs.io/en/latest/how-tos/general_guides/autooof.html) — Out-of-focus holography for 40 GHz+; Ka-Band (CCB) preferred for W/Argus OOF
 - [GBT Proposer's Guide (PDF)](https://www.gb.nrao.edu/scienceDocs/GBTpg.pdf) — Section 5.3 covers switching modes
 - [GBT Memo 288 (PDF)](https://library.nrao.edu/public/memos/gbt/GBT_288.pdf) — Minimum recommended switching periods for VEGAS
 

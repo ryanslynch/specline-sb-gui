@@ -1,4 +1,5 @@
 import re
+import warnings
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor
@@ -31,6 +32,37 @@ from spectral_sb_gui.models.observation import (
     VelocityDefinition,
     VelocityFrame,
 )
+
+
+def _parse_veldef(veldef_str):
+    """Parse a FITS VELDEF string (e.g. 'VRAD-LSR') into (VelocityDefinition, VelocityFrame)."""
+    parts = veldef_str.upper().split("-")
+    vel_type = parts[0] if parts else ""
+    frame = parts[1] if len(parts) > 1 else ""
+
+    if vel_type in ("VRAD",):
+        vdef = VelocityDefinition.RADIO
+    elif vel_type in ("VOPT", "ZOPT"):
+        vdef = VelocityDefinition.OPTICAL
+    elif vel_type in ("VELO", "FELO"):
+        vdef = VelocityDefinition.RELATIVISTIC
+    else:
+        vdef = VelocityDefinition.RADIO
+
+    if frame in ("LSR", "LSRK", "LSRD"):
+        vframe = VelocityFrame.LSRK
+    elif frame in ("BAR", "BARY", "HEL", "HELIO"):
+        vframe = VelocityFrame.BARYCENTRIC
+    elif frame in ("TOP", "TOPO", "GEO"):
+        vframe = VelocityFrame.TOPOCENTRIC
+    elif frame in ("GAL",):
+        vframe = VelocityFrame.GALACTIC
+    elif frame in ("CMB",):
+        vframe = VelocityFrame.CMB
+    else:
+        vframe = VelocityFrame.LSRK
+
+    return vdef, vframe
 
 
 class _CoordSystemDelegate(QStyledItemDelegate):
@@ -208,6 +240,10 @@ class SourcePage(QWizardPage):
         self.table.cellChanged.connect(self._on_cell_edited)
         layout.addWidget(self.table)
 
+        self._coord_system_dirty = False
+        self._vel_frame_dirty = False
+        self._vel_def_dirty = False
+
         # --- Entry form ---
         form_layout = QVBoxLayout()
 
@@ -225,6 +261,9 @@ class SourcePage(QWizardPage):
         for cs in CoordSystem:
             self.coord_system_combo.addItem(cs.value, cs)
         self.coord_system_combo.currentIndexChanged.connect(self._update_coord_placeholders)
+        self.coord_system_combo.currentIndexChanged.connect(
+            lambda _: setattr(self, "_coord_system_dirty", True)
+        )
         row1.addWidget(self.coord_system_combo)
         form_layout.addLayout(row1)
 
@@ -250,12 +289,18 @@ class SourcePage(QWizardPage):
         self.vel_frame_combo.setToolTip("Velocity reference frame")
         for vf in VelocityFrame:
             self.vel_frame_combo.addItem(vf.value, vf)
+        self.vel_frame_combo.currentIndexChanged.connect(
+            lambda _: setattr(self, "_vel_frame_dirty", True)
+        )
         row3.addWidget(self.vel_frame_combo)
         row3.addWidget(QLabel("Definition:"))
         self.vel_def_combo = QComboBox()
         self.vel_def_combo.setToolTip("Velocity definition convention")
         for vd in VelocityDefinition:
             self.vel_def_combo.addItem(vd.value, vd)
+        self.vel_def_combo.currentIndexChanged.connect(
+            lambda _: setattr(self, "_vel_def_dirty", True)
+        )
         row3.addWidget(self.vel_def_combo)
         form_layout.addLayout(row3)
 
@@ -288,6 +333,11 @@ class SourcePage(QWizardPage):
         self.remove_btn.clicked.connect(self._remove_checked)
         button_row2.addWidget(self.remove_btn)
 
+        self.apply_btn = QPushButton("Apply to Selected")
+        self.apply_btn.setToolTip("Apply non-empty form fields to all checked sources in the table")
+        self.apply_btn.clicked.connect(self._apply_to_checked)
+        button_row2.addWidget(self.apply_btn)
+
         self.clear_form_btn = QPushButton("Clear Form")
         self.clear_form_btn.setToolTip("Clear all form fields")
         self.clear_form_btn.clicked.connect(self._clear_form)
@@ -319,6 +369,9 @@ class SourcePage(QWizardPage):
         self.vel_def_combo.setCurrentIndex(0)
         self.table.clearSelection()
         self.table.setCurrentCell(-1, -1)
+        self._coord_system_dirty = False
+        self._vel_frame_dirty = False
+        self._vel_def_dirty = False
 
     # ------------------------------------------------------------------
     # Table helpers
@@ -365,6 +418,9 @@ class SourcePage(QWizardPage):
             if self.vel_def_combo.itemText(i) == vd_text:
                 self.vel_def_combo.setCurrentIndex(i)
                 break
+        self._coord_system_dirty = False
+        self._vel_frame_dirty = False
+        self._vel_def_dirty = False
 
     def _on_cell_double_clicked(self, row, col):
         if col == self.COL_CHECK:
@@ -635,6 +691,94 @@ class SourcePage(QWizardPage):
         self._clear_form()
         self.completeChanged.emit()
 
+    def _apply_to_checked(self):
+        checked = self._checked_rows()
+        if not checked:
+            QMessageBox.information(self, "Apply to Selected", "No sources are checked.")
+            return
+
+        name = self.name_edit.text().strip()
+        coord1 = self.coord1_edit.text().strip()
+        coord2 = self.coord2_edit.text().strip()
+        vel_text = self.velocity_edit.text().strip()
+        cs = self.coord_system_combo.currentData()
+        vf_text = self.vel_frame_combo.currentData().value
+        vd_text = self.vel_def_combo.currentData().value
+
+        apply_name = bool(name)
+        apply_cs = self._coord_system_dirty
+        apply_coord1 = bool(coord1)
+        apply_coord2 = bool(coord2)
+        apply_velocity = bool(vel_text)
+        apply_vel_frame = self._vel_frame_dirty or apply_velocity
+        apply_vel_def = self._vel_def_dirty or apply_velocity
+
+        if not any(
+            [apply_name, apply_cs, apply_coord1, apply_coord2, apply_vel_frame, apply_vel_def]
+        ):
+            QMessageBox.information(
+                self,
+                "Apply to Selected",
+                "No fields to apply. Fill in at least one form field.",
+            )
+            return
+
+        if apply_name and len(checked) > 1:
+            reply = QMessageBox.warning(
+                self,
+                "Apply to Selected",
+                f"Applying the same name '{name}' to {len(checked)} sources will create "
+                "duplicates.\nAre you sure?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+        if apply_name:
+            err = self._validate_cell(0, self.COL_NAME, name)
+            if err:
+                QMessageBox.warning(self, "Validation Error", err)
+                return
+
+        if apply_velocity:
+            try:
+                float(vel_text)
+            except ValueError:
+                QMessageBox.warning(self, "Validation Error", "Velocity must be a number in km/s.")
+                return
+
+        self._editing_blocked = True
+        try:
+            for row in checked:
+                if apply_name:
+                    self.table.item(row, self.COL_NAME).setText(name)
+                if apply_cs:
+                    self.table.item(row, self.COL_COORDSYS).setText(cs.value)
+                if apply_coord1:
+                    error = self._validate_cell(row, self.COL_COORD1, coord1)
+                    if error:
+                        self._editing_blocked = False
+                        QMessageBox.warning(self, "Validation Error", f"Row {row + 1}: {error}")
+                        return
+                    self.table.item(row, self.COL_COORD1).setText(coord1)
+                if apply_coord2:
+                    error = self._validate_cell(row, self.COL_COORD2, coord2)
+                    if error:
+                        self._editing_blocked = False
+                        QMessageBox.warning(self, "Validation Error", f"Row {row + 1}: {error}")
+                        return
+                    self.table.item(row, self.COL_COORD2).setText(coord2)
+                if apply_velocity:
+                    self.table.item(row, self.COL_VELOCITY).setText(vel_text)
+                if apply_vel_frame:
+                    self.table.item(row, self.COL_VELFRAME).setText(vf_text)
+                if apply_vel_def:
+                    self.table.item(row, self.COL_VELDEF).setText(vd_text)
+        finally:
+            self._editing_blocked = False
+        self.completeChanged.emit()
+
     # ------------------------------------------------------------------
     # SIMBAD / NED lookup
     # ------------------------------------------------------------------
@@ -677,7 +821,9 @@ class SourcePage(QWizardPage):
 
             simbad = Simbad()
             simbad.add_votable_fields("velocity")
-            table = simbad.query_object(name)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                table = simbad.query_object(name)
             if table is not None and len(table) > 0:
                 for row in table:
                     ra = str(row["RA"]) if "RA" in row.colnames else ""
@@ -781,6 +927,9 @@ class SourcePage(QWizardPage):
         if vel:
             self.velocity_edit.setText(vel)
 
+        # Auto-add to source table (name is already in name_edit from the lookup call)
+        self._add_or_update_source()
+
     # ------------------------------------------------------------------
     # Catalog import
     # ------------------------------------------------------------------
@@ -822,6 +971,8 @@ class SourcePage(QWizardPage):
     def _parse_catalog(self, file_path):
         sources = []
         coord_system = CoordSystem.J2000
+        catalog_vdef = VelocityDefinition.RADIO
+        catalog_vframe = VelocityFrame.LSRK
         in_data = False
         col_names = []
 
@@ -842,6 +993,8 @@ class SourcePage(QWizardPage):
                             coord_system = CoordSystem.B1950
                         else:
                             coord_system = CoordSystem.J2000
+                    if key == "veldef":
+                        catalog_vdef, catalog_vframe = _parse_veldef(value)
                     if key == "head":
                         col_names = [c.upper() for c in value.split()]
                         in_data = True
@@ -856,6 +1009,7 @@ class SourcePage(QWizardPage):
                     ra_idx = self._find_col(col_names, ("RA",))
                     dec_idx = self._find_col(col_names, ("DEC",))
                     vel_idx = self._find_col(col_names, ("VELOCITY", "VEL", "VELO"))
+                    veldef_idx = self._find_col(col_names, ("VELDEF",))
 
                     if glon_idx is not None and glat_idx is not None:
                         c1_idx, c2_idx = glon_idx, glat_idx
@@ -876,6 +1030,12 @@ class SourcePage(QWizardPage):
                         except ValueError:
                             pass
 
+                    # Per-row VELDEF overrides catalog-level default
+                    row_vdef = catalog_vdef
+                    row_vframe = catalog_vframe
+                    if veldef_idx is not None and veldef_idx < len(parts):
+                        row_vdef, row_vframe = _parse_veldef(parts[veldef_idx])
+
                     sources.append(
                         Source(
                             name=parts[name_idx],
@@ -883,6 +1043,8 @@ class SourcePage(QWizardPage):
                             coord1=parts[c1_idx],
                             coord2=parts[c2_idx],
                             velocity_kms=vel_kms,
+                            velocity_frame=row_vframe,
+                            velocity_definition=row_vdef,
                         )
                     )
         return sources

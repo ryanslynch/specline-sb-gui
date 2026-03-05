@@ -42,6 +42,7 @@ class RestFrequency:
     transition: str = ""
     resolution_value: float = 0.0
     resolution_unit: ResolutionUnit = ResolutionUnit.KHZ
+    line_width_kms: Optional[float] = None  # expected line width in km/s (optional)
 
 
 @dataclass
@@ -62,6 +63,8 @@ class ReceiverConfig:
 
     receiver_name: str = ""
     display_name: str = ""
+    receiver_type: str = ""  # "prime_focus" or "gregorian"
+    num_beams: int = 1
     vegas_mode: int = 0
     bandwidth_mhz: float = 0.0
     channels: int = 0
@@ -71,9 +74,11 @@ class ReceiverConfig:
     swfreq_mhz: float = 0.0  # frequency throw for freq switching
     tint: float = 1.0
     doppler_tracking: bool = True
+    total_duration_s: float = 0.0  # total integration time in seconds (0 = unset)
     rest_freqs_mhz: list[float] = field(default_factory=list)
     obs_freqs_mhz: list[float] = field(default_factory=list)
     beam_rest_freqs: Optional[dict[int, list[float]]] = None  # per-beam freq assignment
+    active_beams: Optional[list[int]] = None  # None = use all beams
 
 
 @dataclass
@@ -86,10 +91,21 @@ class SourceSetup:
 
 @dataclass
 class ObservingStrategy:
-    do_initial_pointing: bool = True
-    do_initial_focus: bool = True
+    # Pointing and focus
+    do_pointing: bool = True
+    do_focus: bool = True
+    # Cadence: "initial_only", "every_2_3hr", "hourly", "every_30_60min", "every_30_45min"
+    pf_cadence: str = "initial_only"
+
+    # AutoOOF (active surface correction, 40 GHz+)
     do_auto_oof: bool = False
-    auto_oof_available: bool = False  # set by setup page based on receiver
+    # Which receiver to use for OOF: "auto" (Ka if available), "ka", "q", "primary"
+    oof_receiver: str = "auto"
+    oof_source: str = ""  # optional calibrator source name for AutoOOF
+
+    # Scan parameters
+    scan_duration_s: float = 300.0  # seconds per on/off or track scan
+    n_scans: int = 1  # number of scan repetitions
 
 
 @dataclass
@@ -105,8 +121,8 @@ class ObservationModel:
     # Observing setup (populated by setup page)
     source_setups: list[SourceSetup] = field(default_factory=list)
 
-    # Strategy
-    strategy: ObservingStrategy = field(default_factory=ObservingStrategy)
+    # Per-group strategies: key = "source_name — receiver_display_name"
+    strategies: dict[str, ObservingStrategy] = field(default_factory=dict)
 
     # Generated scheduling blocks: label -> script text
     generated_sbs: dict[str, str] = field(default_factory=dict)
