@@ -1,5 +1,7 @@
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QCursor
+import re
+
+from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtGui import QCursor, QTextDocument
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -16,6 +18,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSplitter,
+    QStyledItemDelegate,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -34,10 +37,52 @@ GBT_FREQ_MIN_MHZ = 290.0
 GBT_FREQ_MAX_MHZ = 116000.0
 
 
+_MAX_SPLATALOGUE_ROWS = 500
+
+
+def _html_to_plain(html: str) -> str:
+    """Convert HTML-tagged text to plain text, using _ for subscripts and ^ for superscripts."""
+    text = re.sub(r"<sub>(.*?)</sub>", r"_\1", html, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r"<sup>(.*?)</sup>", r"^\1", text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r"<[^>]+>", "", text)
+    return text
+
+
+class _HtmlDelegate(QStyledItemDelegate):
+    """Renders HTML stored in DisplayRole; only paints visible rows so it scales well."""
+
+    def paint(self, painter, option, index):
+        text = index.data(Qt.ItemDataRole.DisplayRole) or ""
+        self.initStyleOption(option, index)
+        style = option.widget.style() if option.widget else QApplication.style()
+        style.drawPrimitive(
+            style.PrimitiveElement.PE_PanelItemViewItem, option, painter, option.widget
+        )
+
+        doc = QTextDocument()
+        doc.setHtml(text)
+        doc.setTextWidth(option.rect.width())
+        painter.save()
+        painter.translate(option.rect.x(), option.rect.y())
+        clip = QRectF(0, 0, option.rect.width(), option.rect.height())
+        painter.setClipRect(clip)
+        y_offset = max(0.0, (option.rect.height() - doc.size().height()) / 2)
+        painter.translate(0, y_offset)
+        doc.drawContents(painter, clip)
+        painter.restore()
+
+    def sizeHint(self, option, index):
+        text = index.data(Qt.ItemDataRole.DisplayRole) or ""
+        doc = QTextDocument()
+        doc.setHtml(text)
+        doc.setTextWidth(200)
+        return QSize(int(doc.idealWidth()) + 8, max(int(doc.size().height()), 20))
+
+
 class _SplatalogueDialog(QDialog):
     """Dialog to select spectral lines from Splatalogue search results."""
 
-    def __init__(self, results_table, parent=None):
+    def __init__(self, results_table, parent=None, total_found=None):
         super().__init__(parent)
         self.setWindowTitle("Splatalogue Results")
         self.setMinimumSize(700, 400)
@@ -45,6 +90,10 @@ class _SplatalogueDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("Select one or more spectral lines:"))
+
+        self._note = QLabel("")
+        self._note.setStyleSheet("color: #b45309;")
+        layout.addWidget(self._note)
 
         self._table = QTableWidget()
         self._table.setToolTip("Check the lines you want to add, then click OK")
@@ -59,13 +108,41 @@ class _SplatalogueDialog(QDialog):
         self._table.setColumnWidth(3, 30)
         self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        html_delegate = _HtmlDelegate(self._table)
+        self._table.setItemDelegateForColumn(0, html_delegate)
+        self._table.setItemDelegateForColumn(1, html_delegate)
+        layout.addWidget(self._table)
 
-        self._results = []
+        self._show_more_btn = QPushButton("")
+        self._show_more_btn.clicked.connect(self._show_more)
+        layout.addWidget(self._show_more_btn)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self._accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        # Parse all rows upfront; display the first batch
+        self._all_results = []
+        self._displayed = 0
+        self._total_found = total_found  # from the original query (may differ if filtered)
         if results_table is not None:
             for row_data in results_table:
-                species = str(row_data.get("Species", "") or row_data.get("Chemical Name", ""))
-                transition = str(row_data.get("Resolved QNs", row_data.get("QNs", "")))
-                # Try known MHz key first, then search for any freq key
+                species_html = str(
+                    row_data.get("name")
+                    or row_data.get("Species")
+                    or row_data.get("chemical_name")
+                    or row_data.get("Chemical Name")
+                    or ""
+                )
+                transition_html = str(
+                    row_data.get("resolved_QNs")
+                    or row_data.get("Resolved QNs")
+                    or row_data.get("QNs")
+                    or ""
+                )
                 freq_mhz = None
                 if "Freq-MHz(rest)" in row_data:
                     try:
@@ -88,39 +165,65 @@ class _SplatalogueDialog(QDialog):
                         break
                 if freq_mhz is None:
                     continue
-                self._results.append(
+                self._all_results.append(
                     {
-                        "species": species,
-                        "transition": transition,
+                        "species": _html_to_plain(species_html),
+                        "transition": _html_to_plain(transition_html),
                         "freq_mhz": freq_mhz,
+                        "species_html": species_html,
+                        "transition_html": transition_html,
                     }
                 )
 
-            self._table.setRowCount(len(self._results))
-            for i, r in enumerate(self._results):
-                self._table.setItem(i, 0, QTableWidgetItem(r["species"]))
-                self._table.setItem(i, 1, QTableWidgetItem(r["transition"]))
-                self._table.setItem(i, 2, QTableWidgetItem(f"{r['freq_mhz']:.4f}"))
-                check_item = QTableWidgetItem()
-                check_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
-                check_item.setCheckState(Qt.CheckState.Unchecked)
-                self._table.setItem(i, 3, check_item)
+        self._append_rows(_MAX_SPLATALOGUE_ROWS)
 
-        layout.addWidget(self._table)
+    def _append_rows(self, count):
+        end = min(self._displayed + count, len(self._all_results))
+        for i in range(self._displayed, end):
+            r = self._all_results[i]
+            row = self._table.rowCount()
+            self._table.insertRow(row)
+            self._table.setItem(row, 0, QTableWidgetItem(r["species_html"]))
+            self._table.setItem(row, 1, QTableWidgetItem(r["transition_html"]))
+            self._table.setItem(row, 2, QTableWidgetItem(f"{r['freq_mhz']:.4f}"))
+            check_item = QTableWidgetItem()
+            check_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
+            check_item.setCheckState(Qt.CheckState.Unchecked)
+            self._table.setItem(row, 3, check_item)
+        self._displayed = end
+        self._update_status()
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(self._accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+    def _update_status(self):
+        total = self._total_found if self._total_found is not None else len(self._all_results)
+        remaining = len(self._all_results) - self._displayed
+        next_batch = min(remaining, _MAX_SPLATALOGUE_ROWS)
+
+        if self._displayed < len(self._all_results):
+            self._note.setText(
+                f"Showing {self._displayed} of {total} results. "
+                "Enter a center frequency above to narrow the search."
+            )
+            self._show_more_btn.setText(f"Show next {next_batch} results ({remaining} remaining)")
+            self._show_more_btn.setVisible(True)
+        else:
+            if total > self._displayed:
+                self._note.setText(
+                    f"Showing {self._displayed} of {total} results "
+                    "(all loaded; enter a frequency to narrow the search)."
+                )
+            else:
+                self._note.setText(f"Showing all {self._displayed} results.")
+            self._show_more_btn.setVisible(False)
+
+    def _show_more(self):
+        self._append_rows(_MAX_SPLATALOGUE_ROWS)
 
     def _accept(self):
         self.selected_lines = []
         for i in range(self._table.rowCount()):
             check = self._table.item(i, 3)
             if check and check.checkState() == Qt.CheckState.Checked:
-                self.selected_lines.append(self._results[i])
+                self.selected_lines.append(self._all_results[i])
         self.accept()
 
 
@@ -254,7 +357,7 @@ class FreqPage(QWizardPage):
         self._add_btn.clicked.connect(self._add_frequency)
         btn_row.addWidget(self._add_btn)
 
-        self._remove_btn = QPushButton("Remove Checked")
+        self._remove_btn = QPushButton("Remove Selected")
         self._remove_btn.setToolTip("Remove all checked frequencies from the table")
         self._remove_btn.clicked.connect(self._remove_checked)
         btn_row.addWidget(self._remove_btn)
@@ -286,7 +389,7 @@ class FreqPage(QWizardPage):
 
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 3)
-        main_layout.addWidget(splitter)
+        main_layout.addWidget(splitter, 1)
         self.setLayout(main_layout)
 
         # Per-source freq storage: source_name -> list[RestFrequency]
@@ -645,9 +748,6 @@ class FreqPage(QWizardPage):
             return
 
         # Find the rest-frequency column; prefer MHz, fall back to GHz
-        import sys
-
-        print(f"[Splatalogue] columns: {results.colnames}", file=sys.stderr)
         freq_col = None
         freq_col_is_ghz = False
         for col_name in results.colnames:
@@ -686,7 +786,7 @@ class FreqPage(QWizardPage):
                     row_dict["Freq-MHz(rest)"] = raw
             rows.append(row_dict)
 
-        dialog = _SplatalogueDialog(rows, self)
+        dialog = _SplatalogueDialog(rows, self, total_found=len(rows))
         if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_lines:
             for line in dialog.selected_lines:
                 row = self._table.rowCount()

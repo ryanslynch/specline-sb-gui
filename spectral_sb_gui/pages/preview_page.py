@@ -38,17 +38,31 @@ def _safe_name(name: str) -> str:
 # ------------------------------------------------------------------
 
 _VFRAME_MAP = {
-    VelocityFrame.TOPOCENTRIC: "Topocentric",
-    VelocityFrame.BARYCENTRIC: "Barycentric",
-    VelocityFrame.LSRK: "LSRK",
-    VelocityFrame.GALACTIC: "Galactic",
-    VelocityFrame.CMB: "CMB",
+    VelocityFrame.TOPOCENTRIC: "topo",
+    VelocityFrame.BARYCENTRIC: "bary",
+    VelocityFrame.LSRK: "lsrk",
+    VelocityFrame.GALACTIC: "galac",
+    VelocityFrame.CMB: "cmb",
 }
 
 _VDEF_MAP = {
     VelocityDefinition.RADIO: "Radio",
     VelocityDefinition.OPTICAL: "Optical",
     VelocityDefinition.RELATIVISTIC: "Relativistic",
+}
+
+# FITS VELDEF strings: (VelocityDefinition, VelocityFrame) -> "VXXX-YYY"
+_VELDEF_DEF_MAP = {
+    VelocityDefinition.RADIO: "VRAD",
+    VelocityDefinition.OPTICAL: "VOPT",
+    VelocityDefinition.RELATIVISTIC: "VELO",
+}
+_VELDEF_FRAME_MAP = {
+    VelocityFrame.TOPOCENTRIC: "TOP",
+    VelocityFrame.BARYCENTRIC: "BAR",
+    VelocityFrame.LSRK: "LSR",
+    VelocityFrame.GALACTIC: "GAL",
+    VelocityFrame.CMB: "CMB",
 }
 
 
@@ -517,8 +531,15 @@ class PreviewPage(QWizardPage):
         lines.append("")
         return "\n".join(lines)
 
+    def _veldef_string(self, src) -> str:
+        """Return the FITS VELDEF string, e.g. 'VRAD-LSR'."""
+        vd = _VELDEF_DEF_MAP.get(src.velocity_definition, "VRAD")
+        vf = _VELDEF_FRAME_MAP.get(src.velocity_frame, "LSR")
+        return f"{vd}-{vf}"
+
     def _generate_catalog(self, src):
         lines = []
+        veldef = self._veldef_string(src)
 
         if src.coord_system == CoordSystem.J2000:
             lines.append('Catalog("""')
@@ -526,11 +547,11 @@ class PreviewPage(QWizardPage):
             lines.append("coordmode=J2000")
             head = "HEAD = NAME                              RA              DEC"
             if src.velocity_kms != 0:
-                head += "             VELOCITY"
+                head += "             VELOCITY   VELDEF"
             lines.append(head)
             entry = f"{src.name:40s} {src.coord1:16s} {src.coord2:16s}"
             if src.velocity_kms != 0:
-                entry += f" {src.velocity_kms}"
+                entry += f" {src.velocity_kms}   {veldef}"
             lines.append(entry)
             lines.append('""")')
         elif src.coord_system == CoordSystem.B1950:
@@ -539,11 +560,11 @@ class PreviewPage(QWizardPage):
             lines.append("coordmode=B1950")
             head = "HEAD = NAME                              RA              DEC"
             if src.velocity_kms != 0:
-                head += "             VELOCITY"
+                head += "             VELOCITY   VELDEF"
             lines.append(head)
             entry = f"{src.name:40s} {src.coord1:16s} {src.coord2:16s}"
             if src.velocity_kms != 0:
-                entry += f" {src.velocity_kms}"
+                entry += f" {src.velocity_kms}   {veldef}"
             lines.append(entry)
             lines.append('""")')
         else:
@@ -552,11 +573,11 @@ class PreviewPage(QWizardPage):
             lines.append("coordmode=Galactic")
             head = "HEAD = NAME                              GLON            GLAT"
             if src.velocity_kms != 0:
-                head += "            VELOCITY"
+                head += "            VELOCITY   VELDEF"
             lines.append(head)
             entry = f"{src.name:40s} {src.coord1:16s} {src.coord2:16s}"
             if src.velocity_kms != 0:
-                entry += f" {src.velocity_kms}"
+                entry += f" {src.velocity_kms}   {veldef}"
             lines.append(entry)
             lines.append('""")')
 
@@ -575,7 +596,7 @@ class PreviewPage(QWizardPage):
         rest_freq_str = ", ".join(f"{f:.4f}" for f in config.rest_freqs_mhz)
         doppler_freq = config.obs_freqs_mhz[0] if config.obs_freqs_mhz else config.rest_freqs_mhz[0]
 
-        vframe = _VFRAME_MAP.get(src.velocity_frame, "Topocentric")
+        vframe = _VFRAME_MAP.get(src.velocity_frame, "topo")
         vdef = _VDEF_MAP.get(src.velocity_definition, "Radio")
 
         lines.append(f'{config_name} = """')

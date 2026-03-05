@@ -212,7 +212,7 @@ class StrategyPage(QWizardPage):
         splitter.setStretchFactor(1, 3)
 
         main_layout = QVBoxLayout()
-        main_layout.addWidget(splitter)
+        main_layout.addWidget(splitter, 1)
         self.setLayout(main_layout)
 
         # Connect signals

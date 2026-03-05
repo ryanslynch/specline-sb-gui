@@ -521,6 +521,12 @@ class SetupPage(QWizardPage):
 
     def _auto_configure(self):
         """Auto-select receivers, VEGAS modes, and switching for all sources."""
+        # Save existing durations so back-navigation doesn't lose them
+        saved_durations: dict[tuple[str, str], float] = {}
+        for setup in self.observation.source_setups:
+            for config in setup.receiver_configs:
+                saved_durations[(setup.source_name, config.receiver_name)] = config.total_duration_s
+
         self.observation.source_setups = []
 
         for src in self.observation.sources:
@@ -567,6 +573,7 @@ class SetupPage(QWizardPage):
                     rest_freqs_mhz=[rf.freq_mhz for rf in rest_freqs],
                     obs_freqs_mhz=obs_freqs,
                 )
+                config.total_duration_s = saved_durations.get((src.name, rcvr_dict["name"]), 0.0)
                 setup.receiver_configs.append(config)
 
             if not setup.receiver_configs and src.rest_freqs:
