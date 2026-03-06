@@ -1,3 +1,5 @@
+**THIS TOOL IS IN DEVELOPMENT AND SHOULD NOT YET BE USED BY OBSERVERS TO CREATE ASTRID SCHEDULING BLOCKS**
+
 # Spectral Line Scheduling Block GUI
 
 A wizard-style GUI for astronomers using the [Green Bank Telescope
